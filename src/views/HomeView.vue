@@ -16,35 +16,62 @@
 </template>
 
 <script>
-  import { getItem, setItem } from '@/utils/localStorage';
-  import UserCard from '@/components/cards/UserCard.vue'
-  import PostCard from '@/components/cards/PostCard.vue'
+  // 移除了 getItem, setItem，因为我们将从后端获取数据
+  // import { getItem, setItem } from '@/utils/localStorage';
+  import UserCard from '@/components/cards/UserCard.vue';
+  import PostCard from '@/components/cards/PostCard.vue';
+  import api from '@/services/api'; // <--- 1. 导入 API 服务
 
   export default {
     name: 'HomeView',
     components: { UserCard, PostCard },
     data() {
       return {
-        users: [],
-        posts: []
-      }
+        users: [], // 用户数据暂时保留，或者你也想从后端获取？
+        posts: [], // <--- 将用于存储从后端获取的帖子
+        isLoadingPosts: true, // <--- 2. 新增加载状态
+        postsError: null,     // <--- 3. 新增错误状态
+      };
     },
-    mounted() {
-      // 获取运动达人数据
-      const storedUsers = getItem('users');
-      if (storedUsers && storedUsers.length > 0) {
-        this.users = storedUsers;
-      } else {
+    methods: { // <--- 4. 新增 methods 对象 (如果之前没有)
+      async fetchPostsFromAPI() {
+        this.isLoadingPosts = true;
+        this.postsError = null;
+        try {
+          const response = await api.getAllPosts(); // <--- 5. 调用 API
+          this.posts = response.data; // <--- 6. 更新 posts 数据
+        } catch (err) {
+          console.error('Error fetching posts from API:', err);
+          this.postsError = '无法加载动态，请稍后再试。';
+          this.posts = []; // 出错时清空
+        } finally {
+          this.isLoadingPosts = false; // <--- 7. 更新加载状态
+        }
+      },
+      // 如果用户数据也想从后端获取，可以添加类似 fetchUsersFromAPI 的方法
+      fetchMockUsers() { // 保留你之前的 mock 用户数据获取逻辑
+        // const storedUsers = getItem('users'); // 移除 localStorage 相关
+        // if (storedUsers && storedUsers.length > 0) {
+        //   this.users = storedUsers;
+        // } else {
         fetch('/mock-data/users.json')
           .then(response => response.json())
           .then(data => {
             this.users = data;
-            setItem('users', data);
+            // setItem('users', data); // 移除 localStorage 相关
           })
           .catch(err => console.error('Error fetching users:', err));
+        // }
       }
+    },
+    mounted() {
+      this.fetchMockUsers(); // 调用获取模拟用户数据的方法
 
-      // 获取动态数据
+      // 获取动态数据 (从 API)
+      this.fetchPostsFromAPI(); // <--- 8. 在 mounted 中调用新的 API 获取方法
+
+      // --- 移除以下从 localStorage 和 mock-data/posts.json 获取帖子的旧逻辑 ---
+      /*
       const storedPosts = getItem('posts');
       if (storedPosts && storedPosts.length > 0) {
         this.posts = storedPosts;
@@ -57,9 +84,9 @@
           })
           .catch(err => console.error('Error fetching posts:', err));
       }
+      */
     }
-
-  }
+  };
 </script>
 
 <style scoped>
