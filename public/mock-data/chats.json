@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "好友A",
+    "avatar": "/images/avatar5.jpg",
+    "lastMessage": "加油！明天见。"
+  },
+  {
+    "id": 2,
+    "name": "相亲相爱一家人",
+    "avatar": "/images/group.jpg",
+    "lastMessage": "今天下午的训练要准时哦！"
+  }
+]

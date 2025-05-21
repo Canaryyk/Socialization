@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "张三",
+    "avatar": "/images/avatar1.jpg",
+    "bio": "运动达人，热爱马拉松和健身。"
+  },
+  {
+    "id": 2,
+    "name": "李四",
+    "avatar": "/images/avatar2.jpg",
+    "bio": "瑜伽爱好者，追求身心平衡。"
+  },
+  {
+    "id": 3,
+    "name": "王小明的超长用户名测试",
+    "avatar": "/images/avatar4.jpg",
+    "bio": "这是一段非常长的个人简介文字，用于测试布局的弹性表现"
+  }
+]
