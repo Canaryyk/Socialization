@@ -1,26 +1,21 @@
+// src/services/api.js
 import axios from 'axios';
 
-// 后端 API 的基础 URL
-// 在开发环境中，通常是 http://localhost:后端端口号/api
-// 确保这里的端口号 (5001) 和你在 server/.env 中设置的 PORT 一致
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_URL = 'http://localhost:5001/api'; // 你的后端 API 地址
 
-// 创建一个 axios 实例
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// (可选) 请求拦截器：用于将来添加认证 token
-// 目前我们先注释掉，因为还没有登录功能
-/*
+// 请求拦截器：在每个请求发送前，检查 localStorage 中是否有 token，如果有就添加到请求头
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken'); // 假设 token 存储在 localStorage
+    const token = localStorage.getItem('userToken'); // 我们将 token 存储在 localStorage 中，名为 'userToken'
     if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`; // 注意 'Bearer ' 前缀
     }
     return config;
   },
@@ -28,69 +23,60 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-*/
 
-// (可选) 响应拦截器：用于统一处理错误等
+// 响应拦截器 (可选，但有用)：可以统一处理错误，例如 token 失效跳转到登录页
 apiClient.interceptors.response.use(
-  (response) => response, // 如果响应成功，直接返回响应
+  (response) => response, // 直接返回成功的响应
   (error) => {
-    // 这里可以添加全局的错误处理逻辑
-    // 例如：如果 token 失效 (401)，则跳转到登录页
-    console.error('API Error:', error.response || error.message || error);
-    // if (error.response && error.response.status === 401) {
-    //   // 清除 token，跳转到登录页
-    //   localStorage.removeItem('authToken');
-    //   // router.push('/login'); // 假设你使用了 Vue Router
-    // }
-    return Promise.reject(error); // 将错误继续抛出，以便组件中可以捕获
+    if (error.response && error.response.status === 401) {
+      // Token 无效或过期
+      console.error("Unauthorized or Token expired, redirecting to login...");
+      localStorage.removeItem('userToken'); // 清除无效token
+      localStorage.removeItem('userInfo'); // 清除用户信息
+      // 这里可以触发一个全局事件或直接用 router 跳转到登录页
+      // import router from '@/router'; // 确保可以访问 router 实例
+      // router.push('/login'); // 假设你的登录页路由是 /login
+      // 注意：在JS模块中直接使用router实例可能需要特殊处理，通常在 Vue 组件或 Pinia action 中更容易
+      // 暂时先打印日志，后续再完善跳转逻辑
+    }
+    return Promise.reject(error);
   }
 );
 
-// 定义 API 接口方法
 export default {
-  // --- 帖子相关的 API ---
-  getAllPosts() {
-    return apiClient.get('/posts'); // 对应后端 GET /api/posts
-  },
-
-  getPostById(postId) {
-    return apiClient.get(`/posts/${postId}`); // 对应后端 GET /api/posts/:id
-  },
-
-  createPost(postData) {
-    // postData 应该包含 { title: '...', content: '...', images: ['url1', 'url2'] }
-    // 注意：目前这个接口在后端是受保护的 (protect middleware)，
-    // 它期望 req.user._id 存在。
-    // 在没有登录功能前，调用这个接口会失败，除非暂时移除后端的 protect 中间件，
-    // 或者在后端 createPost 控制器中硬编码一个 user ID。
-    // 为了演示，我们先假设可以调用。
-    return apiClient.post('/posts', postData); // 对应后端 POST /api/posts
-  },
-
-  getPostsByUserId(userId) {
-    return apiClient.get(`/posts/user/${userId}`); // 对应后端 GET /api/posts/user/:userId
-  },
-
-  // --- 用户相关的 API (未来使用) ---
-  /*
-  registerUser(userData) {
+  // --- Auth Service ---
+  register(userData) {
     return apiClient.post('/auth/register', userData);
   },
-
-  loginUser(credentials) {
+  login(credentials) {
     return apiClient.post('/auth/login', credentials);
   },
+  // 如果有登出 API (后端通常不需要专门的登出 API，因为 JWT 是无状态的，前端清除 token 即可)
+  // logout() { /* 通常是前端操作 */ }
 
-  getCurrentUserProfile() {
+  // --- User Service ---
+  getMe() { // 获取当前登录用户信息
     return apiClient.get('/users/me');
   },
-
+  updateUserProfile(userData) {
+    return apiClient.put('/users/me/update', userData);
+  },
   getUserProfileById(userId) {
     return apiClient.get(`/users/${userId}`);
   },
 
-  updateUserProfile(profileData) {
-      return apiClient.put('/users/me/update', profileData);
+  // --- Post Service (你已经有的) ---
+  createPost(postData) {
+    return apiClient.post('/posts', postData);
+  },
+  getAllPosts() {
+    return apiClient.get('/posts');
+  },
+  getPostById(postId) {
+    return apiClient.get(`/posts/${postId}`);
+  },
+  getPostsByUser(userId) {
+    return apiClient.get(`/posts/user/${userId}`);
   }
-  */
+  // ... 其他 API 方法
 };

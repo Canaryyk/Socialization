@@ -1,8 +1,12 @@
+// App.vue
 <template>
-  <div id="app">
+  <div id="app-container">
+    <!-- 最好给外层 div 一个更具体的 id 或 class，避免与 #app 冲突 -->
     <NavBar />
-    <main>
-      <transition name="fade">
+    <main class="app-main-content">
+      <!-- 已有的 class -->
+      <transition name="fade" mode="out-in">
+        <!-- 添加 mode="out-in" 改善过渡效果 -->
         <router-view />
       </transition>
     </main>
@@ -10,14 +14,21 @@
   </div>
 </template>
 
-<script>
-  import NavBar from '@/components/layout/NavBar.vue'
-  import Footer from '@/components/layout/Footer.vue'
+<script setup>
+  // 改为 <script setup>
+  import { onMounted } from 'vue';
+  import { useAuthStore } from '@/stores/authStore';
+  import NavBar from '@/components/layout/NavBar.vue';
+  import Footer from '@/components/layout/Footer.vue';
 
-  export default {
-    name: 'App',
-    components: { NavBar, Footer }
-  }
+  // 在 <script setup> 顶层调用是正确的
+  const authStore = useAuthStore();
+
+  onMounted(() => {
+    authStore.fetchCurrentUser();
+  });
+
+  // 不需要显式的 components 注册和 export default
 </script>
 
 <style>

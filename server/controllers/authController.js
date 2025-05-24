@@ -23,11 +23,13 @@ exports.registerUser = async (req, res) => {
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
+      // console.log('User found by email (debug):', userExists);
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
     const userByUsername = await User.findOne({ username });
     if (userByUsername) {
+      // console.log('User found by username (debug):', userByUsername);
       return res.status(400).json({ message: 'Username is already taken' });
     }
 
