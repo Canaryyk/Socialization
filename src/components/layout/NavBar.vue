@@ -47,10 +47,23 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const isLoggedIn = computed(() => authStore.isLoggedIn);
-const userAvatar = computed(() => authStore.currentUser?.avatar || '/images/default-avatar.jpg');
+const currentUser = computed(() => authStore.currentUser);
+
+const userAvatar = computed(() => {
+  const avatar = currentUser.value?.avatar;
+  if (avatar && avatar !== 'default_avatar.png') {
+    return avatar; // 使用用户特定的头像
+  }
+  return '/images/default_avatar.jpg'; // 回退到前端的默认头像 (.jpg)
+});
 
 const goToProfile = () => {
-  router.push('/me/settings');
+  if (currentUser.value && currentUser.value.username) {
+    router.push(`/user/${currentUser.value.username}`);
+  } else {
+    console.warn('Current user or username not found, redirecting to settings as fallback.');
+    router.push('/settings/profile');
+  }
 };
 </script>
 

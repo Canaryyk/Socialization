@@ -66,7 +66,7 @@
       };
 
       const handleAvatarError = (event) => { // 可选：处理头像加载失败
-        event.target.src = '/images/default-avatar.jpg'; // 替换为你的默认头像路径
+        event.target.src = '/images/default_avatar.jpg'; // 替换为你的默认头像路径
       };
 
       return {

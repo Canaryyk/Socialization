@@ -64,6 +64,9 @@ export default {
   getUserProfileById(userId) {
     return apiClient.get(`/users/${userId}`);
   },
+  getUserProfileByUsername(username) {
+    return apiClient.get(`/users/username/${username}`);
+  },
 
   // --- Post Service (你已经有的) ---
   createPost(postData) {

@@ -5,10 +5,11 @@
     <NavBar />
     <main class="app-main-content">
       <!-- 已有的 class -->
-      <transition name="fade" mode="out-in">
-        <!-- 添加 mode="out-in" 改善过渡效果 -->
-        <router-view />
-      </transition>
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
     <Footer />
   </div>
@@ -48,7 +49,7 @@
   /* 页面切换动画 */
   .fade-enter-active,
   .fade-leave-active {
-    transition: opacity 0.75s ease;
+    transition: opacity 0.2s ease;
   }
 
   .fade-enter-from,

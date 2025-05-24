@@ -11,12 +11,14 @@ export const useAuthStore = defineStore('auth', {
       isLoading: false,
       error: null,
     },
+    viewedProfile: null, // 用于存储正在查看的他人用户信息
   }),
   getters: {
     isLoggedIn: (state) => !!state.token && !!state.user,
     currentUser: (state) => state.user,
     getToken: (state) => state.token,
     authStatus: (state) => state.status,
+    getViewedProfile: (state) => state.viewedProfile, // Getter for viewed profile
   },
   actions: {
     setStatus(loading, error = null) {
@@ -70,6 +72,7 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.token = null;
       this.user = null;
+      this.viewedProfile = null; // 清除正在查看的用户信息
       localStorage.removeItem('userToken');
       localStorage.removeItem('userInfo');
       this.setStatus(false);
@@ -118,6 +121,31 @@ export const useAuthStore = defineStore('auth', {
         console.error('Update profile error:', error.response?.data || error);
         return false;
       }
+    },
+    // 获取指定用户的公开信息
+    async fetchPublicProfile(identifier, type = 'id') { // type can be 'id' or 'username'
+      this.setStatus(true);
+      this.viewedProfile = null; // Reset before fetching new profile
+      try {
+        let response;
+        if (type === 'username') {
+          response = await api.getUserProfileByUsername(identifier);
+        } else {
+          response = await api.getUserProfileById(identifier);
+        }
+        this.viewedProfile = response.data; // 后端返回的是 { _id, username, avatar, bio, createdAt }
+        this.setStatus(false);
+        return true;
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || 'Failed to fetch user profile';
+        this.setStatus(false, errorMessage);
+        console.error('Fetch public profile error:', error.response?.data || error);
+        this.viewedProfile = null; // Ensure it's null on error
+        return false;
+      }
+    },
+    clearViewedProfile() {
+      this.viewedProfile = null;
     }
   },
 });

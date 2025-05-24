@@ -11,8 +11,8 @@ import { useAuthStore } from '@/stores/authStore'; // 假设你的 authStore 在
 // 懒加载组件可以提升初始加载速度
 const LoginView = () => import('@/views/LoginView.vue');
 const RegisterView = () => import('@/views/RegisterView.vue');
-const UserProfileView = () => import('@/views/UserProfileView.vue'); // 假设你将创建此视图
-const UserSettingsView = () => import('@/views/UserSettingsView.vue'); // 假设你将创建此视图
+const UserProfilePage = () => import('@/views/UserProfilePage.vue');
+const EditProfilePage = () => import('@/views/EditProfilePage.vue');
 
 const routes = [
   {
@@ -57,16 +57,21 @@ const routes = [
     meta: { guestOnly: true } // 只允许未登录用户访问
   },
   {
-    path: '/profile/:userId', // 用户个人主页
-    name: 'UserProfile',
-    component: UserProfileView, // 你需要创建这个视图组件
-    props: true, // 将 :userId作为 prop 传递给组件
-    // 这个页面可以公开，也可以根据情况设为 requiresAuth
+    path: '/user/:username',
+    name: 'UserProfileByUsername',
+    component: UserProfilePage,
+    props: true
   },
   {
-    path: '/me/settings', // 用户设置页面 (当前登录用户的设置)
-    name: 'UserSettings',
-    component: UserSettingsView, // 你需要创建这个视图组件
+    path: '/profile/:id',
+    name: 'UserProfileById',
+    component: UserProfilePage,
+    props: true
+  },
+  {
+    path: '/settings/profile',
+    name: 'EditProfile',
+    component: EditProfilePage,
     meta: { requiresAuth: true }
   }
 ];
