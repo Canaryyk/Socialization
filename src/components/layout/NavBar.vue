@@ -42,6 +42,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
+import defaultFrontendAvatarPath from '/images/default_avatar.jpg'; // 重命名以示区分
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -50,11 +51,18 @@ const isLoggedIn = computed(() => authStore.isLoggedIn);
 const currentUser = computed(() => authStore.currentUser);
 
 const userAvatar = computed(() => {
-  const avatar = currentUser.value?.avatar;
-  if (avatar && avatar !== 'default_avatar.png') {
-    return avatar; // 使用用户特定的头像
+  const user = currentUser.value;
+  if (user && user.avatar && user.avatar !== 'default_avatar.png') {
+    // 如果 avatar 已经是完整的 URL (例如旧数据或外部存储)，则直接使用
+    if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
+        return user.avatar;
+    }
+    // 否则，假定是服务器相对路径，需要拼接基础 URL
+    // 与 EditProfilePage 和 UserProfilePage 保持一致
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+    return `${baseUrl}/public${user.avatar}`; // 例如 http://localhost:5001/public/uploads/avatars/xxxx.jpg
   }
-  return '/images/default_avatar.jpg'; // 回退到前端的默认头像 (.jpg)
+  return defaultFrontendAvatarPath; // 回退到前端的默认头像
 });
 
 const goToProfile = () => {

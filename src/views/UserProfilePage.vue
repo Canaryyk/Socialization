@@ -118,7 +118,11 @@ const defaultAvatar = ref(defaultAvatarPath);
 
 const effectiveAvatarSrc = computed(() => {
   if (profile.value && profile.value.avatar && profile.value.avatar !== 'default_avatar.png') {
-    return profile.value.avatar;
+    if (profile.value.avatar.startsWith('http://') || profile.value.avatar.startsWith('https://')) {
+        return profile.value.avatar;
+    }
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+    return `${baseUrl}/public${profile.value.avatar}`;
   }
   return defaultAvatar.value;
 });

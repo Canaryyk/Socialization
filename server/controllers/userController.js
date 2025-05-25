@@ -1,8 +1,10 @@
 // server/controllers/userController.js
 const User = require('../models/User');
-const Post = require('../models/Post'); // 如果需要获取用户的帖子
+// const Post = require('../models/Post'); // 如果需要获取用户的帖子 - 暂时注释掉，因为未使用
 const jwt = require('jsonwebtoken'); // 确保 jwt 被导入，因为 updateUserProfile 会生成新 token
 const config = require('../config'); // 确保 config 被导入
+const fs = require('fs'); // 用于删除旧头像
+const path = require('path'); // 用于构建文件路径
 
 // @desc    获取当前登录用户的信息
 // @route   GET /api/users/me
@@ -72,24 +74,49 @@ exports.getUserProfileByUsername = async (req, res) => {
 };
 
 // @desc    更新当前登录用户的信息
-// @route   PUT /api/users/me/update  (或者可以是 /api/users/me/profile)
+// @route   PUT /api/users/me/update
 // @access  Private
 exports.updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
     if (user) {
+      // 处理基本信息更新
       user.username = req.body.username || user.username;
-      // 对于 email 的更新，通常需要更严格的验证流程，例如发送验证邮件
-      // 暂时保持原样，但提示这里可能需要增强
-      user.email = req.body.email || user.email;
+      user.email = req.body.email || user.email; // 邮箱更新可能需要额外验证
 
-      if (req.body.bio !== undefined) { // 允许将 bio 设置为空字符串
+      if (req.body.bio !== undefined) {
         user.bio = req.body.bio;
       }
-      if (req.body.avatar) { // 如果有头像更新 (未来可以改成文件上传逻辑)
-        user.avatar = req.body.avatar;
+
+      // 处理头像更新
+      if (req.file) {
+        // 如果有旧头像且不是默认头像，则删除旧头像
+        if (user.avatar && user.avatar !== 'default_avatar.png' && !user.avatar.startsWith('http')) {
+            const oldAvatarPath = path.join(__dirname, '..', 'public', user.avatar); // 假设 avatar 存储的是相对路径如 /uploads/avatars/filename.jpg
+             try {
+                if (fs.existsSync(oldAvatarPath)) {
+                    fs.unlinkSync(oldAvatarPath);
+                }
+             } catch (err) {
+                console.error("Error deleting old avatar:", err);
+                // 不阻断流程，但记录错误
+             }
+        }
+        // 将头像路径保存到数据库，相对于 public 目录
+        user.avatar = `/uploads/avatars/${req.file.filename}`;
+      } else if (req.body.avatar === '' && user.avatar !== 'default_avatar.png') {
+        // 如果前端发送了空字符串表示移除头像，并且当前头像不是默认头像
+        // (可选：如果希望支持通过清空avatar字段来恢复默认头像或移除)
+        // 这里我们假设如果 req.body.avatar 为空，且之前有自定义头像，则不做更改。
+        // 或者，如果业务逻辑是清空 avatar 字段就恢复默认，可以如下设置：
+        // if (user.avatar && user.avatar !== 'default_avatar.png' && !user.avatar.startsWith('http')) {
+        //   const oldAvatarPath = path.join(__dirname, '..', 'public', user.avatar);
+        //   try { if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath); } catch (e) { console.error(e); }
+        // }
+        // user.avatar = 'default_avatar.png'; // 恢复为默认头像
       }
+
 
       // 如果提供了新密码
       if (req.body.password) {
@@ -105,9 +132,8 @@ exports.updateUserProfile = async (req, res) => {
         _id: updatedUser._id,
         username: updatedUser.username,
         email: updatedUser.email,
-        avatar: updatedUser.avatar,
+        avatar: updatedUser.avatar, // 返回新的头像路径
         bio: updatedUser.bio,
-        // 确保生成 token 的逻辑是正确的
         token: jwt.sign({ id: updatedUser._id }, config.JWT_SECRET, { expiresIn: '30d' }),
       });
     } else {
@@ -115,10 +141,17 @@ exports.updateUserProfile = async (req, res) => {
     }
   } catch (error) {
     console.error('Update User Profile Error:', error);
+    // Multer 错误处理 (例如文件过大或类型不匹配)
+    if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File is too large. Max 5MB allowed.' });
+    }
+    if (error.message === 'Not an image! Please upload only images.') {
+        return res.status(400).json({ message: error.message });
+    }
     if (error.code === 11000) { // MongoDB duplicate key error
       return res.status(400).json({ message: 'Email or username already exists' });
     }
-    res.status(500).json({ message: 'Server error while updating profile\'', error: error.message });
+    res.status(500).json({ message: 'Server error while updating profile', error: error.message });
   }
 };
 

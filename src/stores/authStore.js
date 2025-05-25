@@ -98,17 +98,20 @@ export const useAuthStore = defineStore('auth', {
         this.status.error = null; // 如果没有token，重置错误状态
       }
     },
-    async updateUserProfile(userData) {
+    async updateUserProfile(profileData) { // profileData is now expected to be FormData
       if (!this.isLoggedIn) return false;
       this.setStatus(true);
       try {
-        const response = await api.updateUserProfile(userData);
-        const { token, ...updatedUserInfo } = response.data; // 后端可能返回新token和更新后的用户信息
+        // api.updateUserProfile 需要能够发送 FormData
+        // 确保 api service 中的对应方法设置了正确的 Content-Type header
+        // (通常 Axios 会在传入 FormData 时自动设置 multipart/form-data)
+        const response = await api.updateUserProfile(profileData);
+        const { token, ...updatedUserInfo } = response.data;
 
         this.user = updatedUserInfo;
         localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
 
-        if (token && token !== this.token) { // 如果后端返回了新的token
+        if (token && token !== this.token) {
           this.token = token;
           localStorage.setItem('userToken', token);
         }
@@ -116,7 +119,12 @@ export const useAuthStore = defineStore('auth', {
         this.setStatus(false);
         return true;
       } catch (error) {
-        const errorMessage = error.response?.data?.message || 'Profile update failed';
+        let errorMessage = 'Profile update failed';
+        if (error.response && error.response.data && error.response.data.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
         this.setStatus(false, errorMessage);
         console.error('Update profile error:', error.response?.data || error);
         return false;

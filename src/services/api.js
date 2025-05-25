@@ -5,9 +5,9 @@ const API_URL = 'http://localhost:5001/api'; // 你的后端 API 地址
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // headers: { // 移除全局 Content-Type 设置，让 Axios 自动处理
+  //   'Content-Type': 'application/json',
+  // },
 });
 
 // 请求拦截器：在每个请求发送前，检查 localStorage 中是否有 token，如果有就添加到请求头
