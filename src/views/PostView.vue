@@ -18,13 +18,20 @@
                   required></textarea>
       </div>
       <div class="form-group">
-        <label for="image">上传图片</label>
+        <label for="images">上传图片 (已选 {{ imageFiles.length }} / 最多 {{ MAX_IMAGES }} 张)</label>
         <div class="file-input-wrapper">
-          <input type="file" id="image" @change="handleImageUpload" accept="image/*" />
-          <span class="file-input-label">选择图片</span>
+          <!-- 只有当还可以选择更多图片时，才显示选择按钮 -->
+          <template v-if="canSelectMoreImages">
+            <input type="file" id="images" @change="handleImageUpload" accept="image/*" ref="imageInput" multiple />
+            <span class="file-input-label">选择图片</span>
+          </template>
+          <span v-else class="file-input-label-disabled">已达图片数量上限</span>
         </div>
-        <div v-if="imagePreview" class="image-preview">
-          <img :src="imagePreview" alt="预览" />
+        <div v-if="imagePreviews.length > 0" class="image-preview-container">
+          <div v-for="(preview, index) in imagePreviews" :key="index" class="image-preview-item">
+            <img :src="preview" alt="图片预览" />
+            <button type="button" @click="removeImage(index)" class="remove-image-button" title="移除图片">×</button>
+          </div>
         </div>
       </div>
       <button type="submit" class="submit-button">发布</button>
@@ -33,57 +40,118 @@
 </template>
 
 <script>
-  import { getItem, setItem } from '@/utils/localStorage';
+// import { getItem, setItem } from '@/utils/localStorage'; // 将不再使用 localStorage 存储帖子
+import api from '@/services/api'; // 导入 API 服务
 
-  export default {
-    name: 'PostView',
-    data() {
-      return {
-        title: '', // 新增标题字段
-        content: '',
-        imageFile: null,
-        imagePreview: ''
-      };
-    },
-    methods: {
-      handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-          this.imageFile = file;
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.imagePreview = e.target.result;
-          };
-          reader.readAsDataURL(file);
+const MAX_IMAGES = 5; // 定义最大图片数量常量
+
+export default {
+  name: 'PostView',
+  data() {
+    return {
+      title: '',
+      content: '',
+      imageFiles: [],
+      imagePreviews: [],
+      MAX_IMAGES: MAX_IMAGES // 在 data 中也暴露一下，方便模板中使用（如果需要）
+    };
+  },
+  computed: {
+    canSelectMoreImages() {
+      return this.imageFiles.length < MAX_IMAGES;
+    }
+  },
+  methods: {
+    handleImageUpload(event) {
+      const newFiles = event.target.files;
+
+      if (!newFiles || newFiles.length === 0) {
+        return;
+      }
+
+      const currentImageCount = this.imageFiles.length;
+      const remainingSlots = MAX_IMAGES - currentImageCount;
+
+      if (remainingSlots <= 0) {
+        alert(`您最多只能上传 ${MAX_IMAGES} 张图片，已达到上限。`);
+        // 清空文件选择，以便用户可以重新选择（如果他们想替换）
+        if (this.$refs.imageInput) {
+          this.$refs.imageInput.value = null;
         }
-      },
-      submitPost() {
-        const newPost = {
-          id: Date.now(),
-          author: {
-            id: 10086, // 示例用户，可替换为实际登录用户数据
-            name: '当前用户',
-            avatar: '/images/avatar3.jpg'
-          },
-          title: this.title, // 添加标题
-          content: this.content,
-          image: this.imagePreview || '', // 如果没有图片则为空字符串
-          timestamp: new Date().toISOString()
+        return;
+      }
+
+      const filesToAdd = Array.from(newFiles).slice(0, remainingSlots);
+
+      if (newFiles.length > remainingSlots) {
+        alert(`您选择了 ${newFiles.length} 张图片，但只能再添加 ${remainingSlots} 张。只会处理前 ${remainingSlots} 张。`);
+      }
+
+      filesToAdd.forEach(file => {
+        // 简单的重复文件检查（基于文件名和大小），可选
+        // if (this.imageFiles.some(existingFile => existingFile.name === file.name && existingFile.size === file.size)) {
+        //   console.warn(`文件 ${file.name} 已存在，跳过。`);
+        //   return;
+        // }
+
+        this.imageFiles.push(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.imagePreviews.push(e.target.result);
         };
+        reader.readAsDataURL(file);
+      });
 
-        const posts = getItem('posts') || [];
-        posts.unshift(newPost);
-        setItem('posts', posts);
+      // 关键：重置 input 的 value，这样如果用户再次选择相同的文件，change 事件仍会触发
+      if (this.$refs.imageInput) {
+        this.$refs.imageInput.value = null;
+      }
+    },
 
+    removeImage(index) {
+      this.imageFiles.splice(index, 1);
+      this.imagePreviews.splice(index, 1);
+      // 如果移除了图片后，文件输入框又可以用了，确保它不是禁用状态
+      // （如果之前因为达到上限而禁用了它，这里逻辑上需要重新启用，不过当前设计中没有禁用它）
+    },
+
+    async submitPost() {
+      if (!this.title || !this.content) {
+        alert('标题和内容不能为空！');
+        return;
+      }
+
+      if (this.imageFiles.length === 0 && !confirm("您没有选择任何图片，确定要发布吗？")) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('title', this.title);
+      formData.append('content', this.content);
+
+      if (this.imageFiles.length > 0) {
+        this.imageFiles.forEach(file => {
+          formData.append('images', file);
+        });
+      }
+
+      try {
+        const response = await api.createPost(formData);
         alert('动态发布成功！');
+        console.log('Post created:', response.data);
         this.title = '';
         this.content = '';
-        this.imageFile = null;
-        this.imagePreview = '';
+        this.imageFiles = [];
+        this.imagePreviews = [];
+        // submitPost 后不需要手动清空 this.$refs.imageInput.value，因为它在 handleImageUpload 已经做了
         this.$router.push('/');
+      } catch (error) {
+        console.error('发布动态失败:', error.response ? error.response.data : error.message);
+        alert(`发布失败: ${error.response ? error.response.data.message : error.message}`);
       }
     }
-  };
+  }
+};
 </script>
 
 <style scoped>
@@ -176,16 +244,49 @@
       background-color: var(--primary-hover);
     }
 
-  .image-preview {
+  .image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-top: 1rem;
   }
 
-    .image-preview img {
-      max-width: 100%;
-      max-height: 200px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  .image-preview-item {
+    flex: 1 1 calc(20% - 10px);
+    max-width: calc(20% - 10px);
+    box-sizing: border-box;
+  }
+
+  .image-preview-item img {
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (max-width: 768px) {
+    .post-form {
+      padding: 1.5rem;
     }
+
+    textarea {
+      height: 120px;
+    }
+
+    .image-preview-item {
+      flex: 1 1 calc(33.333% - 10px);
+      max-width: calc(33.333% - 10px);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .image-preview-item {
+      flex: 1 1 calc(50% - 10px);
+      max-width: calc(50% - 10px);
+    }
+  }
 
   .submit-button {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
@@ -216,16 +317,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-
-  @media (max-width: 768px) {
-    .post-form {
-      padding: 1.5rem;
-    }
-
-    textarea {
-      height: 120px;
     }
   }
 </style>

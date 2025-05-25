@@ -17,20 +17,20 @@ exports.registerUser = async (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Please provide all required fields' });
+    return res.status(400).json({ message: '请提供所有必填项' }); // Changed
   }
 
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
       // console.log('User found by email (debug):', userExists);
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res.status(400).json({ message: '该邮箱已被注册' }); // Changed
     }
 
     const userByUsername = await User.findOne({ username });
     if (userByUsername) {
       // console.log('User found by username (debug):', userByUsername);
-      return res.status(400).json({ message: 'Username is already taken' });
+      return res.status(400).json({ message: '该用户名已被占用' }); // Changed
     }
 
     const user = await User.create({
@@ -48,11 +48,11 @@ exports.registerUser = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      res.status(400).json({ message: 'Invalid user data' });
+      res.status(400).json({ message: '无效的用户数据，注册失败' }); // Changed
     }
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ message: 'Server error during registration', error: error.message });
+    res.status(500).json({ message: '服务器错误，注册失败', error: error.message }); // Changed
   }
 };
 
@@ -63,7 +63,7 @@ exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: 'Please provide email and password' });
+    return res.status(400).json({ message: '请输入邮箱和密码' }); // Changed
   }
 
   try {
@@ -78,10 +78,10 @@ exports.loginUser = async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      res.status(401).json({ message: '邮箱或密码错误' }); // Changed
     }
   } catch (error) {
     console.error('Login Error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({ message: '服务器错误，登录失败' }); // Changed
   }
 };

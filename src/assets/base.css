@@ -1,13 +1,13 @@
 /* base.css */
 :root {
-    /* 主色调  */
-    --primary-color: #f7937c; /* 主按钮/激活状态 */
-    --primary-hover: #f25933; /* 悬停加深 */
-    --secondary-color: #94a3b8; /* 次要文本/边框 */
-    --background-color: #f8fafc; /* 浅蓝灰背景 */
-    --text-color: #1e293B; /* 深蓝灰文字 */
-    --border-color: #e2e8f0; /* 柔和边框色 */
-    --accent-color: #f59e0B; /* 强调色用于特殊状态 */
+    
+    --primary-color: #f7937c; 
+    --primary-hover: #f25933; 
+    --secondary-color: #94a3b8; 
+    --background-color: #f8fafc; 
+    --text-color: #1e293B; 
+    --border-color: #e2e8f0; 
+    --accent-color: #f59e0B; 
 }
 
 * {

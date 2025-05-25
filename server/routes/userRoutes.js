@@ -8,7 +8,8 @@ const { getMe, getUserProfileById, updateUserProfile, getUserProfileByUsername }
 const { protect } = require('../middlewares/authMiddleware');
 
 // 创建上传目录（如果不存在）
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
+// const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars'); // 旧路径
+const uploadDir = path.resolve(__dirname, '..', '..', 'public', 'uploads', 'avatars'); // 新路径，指向根 public/uploads/avatars
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

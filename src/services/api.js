@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api'; // 你的后端 API 地址
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api'; // 你的后端 API 地址
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -80,6 +80,15 @@ export default {
   },
   getPostsByUser(userId) {
     return apiClient.get(`/posts/user/${userId}`);
-  }
+  },
+
+  // --- Comment Service for Posts ---
+  addCommentToPost(postId, commentData) { // commentData should be an object like { text: "..." }
+    return apiClient.post(`/posts/${postId}/comments`, commentData);
+  },
+  deleteCommentFromPost(postId, commentId) {
+    return apiClient.delete(`/posts/${postId}/comments/${commentId}`);
+  },
+
   // ... 其他 API 方法
 };

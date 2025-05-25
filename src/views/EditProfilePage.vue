@@ -104,7 +104,7 @@ const effectiveAvatarSrc = computed(() => {
     // 否则，假定是服务器相对路径，需要拼接基础 URL
     // 注意: VITE_API_BASE_URL 通常在 .env 文件中定义
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
-    return `${baseUrl}/public${currentUser.value.avatar}`; // 例如 http://localhost:5001/public/uploads/avatars/xxxx.jpg
+    return `${baseUrl}${currentUser.value.avatar}`; // 修改点：移除了 '/public'
   }
   return defaultAvatarPath; // 默认头像路径
 });
@@ -172,19 +172,7 @@ const handleProfileUpdate = async () => {
 
   if (avatarFile.value) {
     profileData.append('avatar', avatarFile.value); // 'avatar' 必须与后端 multer.single('avatar') 的字段名一致
-  } else if (currentUser.value && currentUser.value.avatar && formData.value.avatar === '') {
-    // 如果用户希望移除头像（通过某种方式，例如一个checkbox，这里简化处理）
-    // 并且当前头像不是默认头像，可以发送一个特殊标记或空值让后端处理
-    // 当前后端逻辑是，如果不传 avatar 文件，则不更新头像。
-    // 如果要支持移除头像并恢复默认，后端需要相应逻辑。
-    // 另一种处理方式是，如果 avatarFile.value 为 null 且用户没有更改其他只包含头像的字段，则不提交 avatar 字段。
-    // 这里我们假设，如果不选择新文件，就不在 FormData 中添加 avatar 字段，后端将保持原有头像。
   }
-
-  // 注意：旧的 formData.avatar (URL) 不再直接发送。
-  // 如果用户没有选择新文件，并且希望保留旧头像（如果旧头像是URL格式），
-  // 并且后端支持混合URL和文件上传的逻辑，则可能需要将 currentUser.value.avatar 添加到 FormData。
-  // 但当前实现是，如果选择了新文件，则上传文件；否则，后端不更新头像字段（除非后端有特殊逻辑处理空 avatar 字段）。
 
   const oldUsername = currentUser.value?.username; // Store old username before update
 
@@ -195,9 +183,7 @@ const handleProfileUpdate = async () => {
     formData.value.confirmPassword = '';
     // 上传成功后，currentUser 会被 authStore 更新，effectiveAvatarSrc 会自动变化
     // 无需手动重置 avatarFile 和 avatarPreviewUrl，因为 watch(currentUser) 会处理
-    // 但如果希望立即清除预览和文件选择状态，可以取消注释下面两行：
-    // avatarFile.value = null;
-    // avatarPreviewUrl.value = null;
+
     if (avatarFileInput.value) avatarFileInput.value.value = null; // 清除文件输入框状态
 
     const newUsername = authStore.currentUser?.username; // Get new username from store
@@ -229,18 +215,6 @@ const handleProfileUpdate = async () => {
 </script>
 
 <style scoped>
-/* Mimic CSS Variables from the reference style if they are not global */
-/* :root {
-  --card-background: #ffffff;
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --text-color: #1f2937;
-  --text-secondary: #6b7280;
-  --border-color: #d1d5db;
-  --background-color: #f8fafc;
-  --danger-color: #ef4444;
-  --success-color: #10b981;
-} */
 
 .edit-profile-page-wrapper {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;

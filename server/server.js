@@ -23,7 +23,9 @@ app.use(express.urlencoded({ extended: false })); // 解析 URL编码的请求�
 // 提供静态文件服务 (例如上传的图片)
 // __dirname 是当前文件 (server.js) 所在的目录 (server/)
 // path.join 会正确地拼接路径，适用于不同操作系统
-app.use('/public', express.static(path.join(__dirname, 'public')));
+// 旧: app.use('/public', express.static(path.join(__dirname, 'public')));
+// 新: 直接服务根目录下的 public 文件夹
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // 定义 API 路由
 app.use('/api/auth', authRoutes);
@@ -34,15 +36,6 @@ app.use('/api/users', userRoutes);
 app.get('/', (req, res) => {
   res.send('Socialization API is running...');
 });
-
-// 全局错误处理中间件 (可选，但推荐)
-// 你可以创建一个 errorMiddleware.js 并在最后 app.use(errorHandler);
-// app.use((err, req, res, next) => {
-//   console.error(err.stack);
-//   const statusCode = err.statusCode || 500;
-//   const message = err.message || 'Internal Server Error';
-//   res.status(statusCode).json({ message });
-// });
 
 const PORT = config.PORT;
 

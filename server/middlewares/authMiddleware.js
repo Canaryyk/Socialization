@@ -18,23 +18,20 @@ const protect = async (req, res, next) => {
       // 将解码后的用户信息 (不包含密码) 附加到请求对象上
       // 这样后续的路由处理器就可以访问 req.user
       req.user = await User.findById(decoded.id || decoded.user?.id).select('-password');
-      // decoded.id 是因为我之前在 authController.js 生成 token 时 payload 是 { id: user.id }
-      // decoded.user?.id 是因为另一个例子中 payload 是 { user: { id: user.id } }
-      // 请确保与你 authController 中生成 token 的 payload 结构一致
 
       if (!req.user) {
-        return res.status(401).json({ message: 'Not authorized, user not found' });
+        return res.status(401).json({ message: '未授权，用户不存在' }); // Changed
       }
 
       next(); // 继续执行下一个中间件或路由处理器
     } catch (error) {
-      console.error('Token verification error:', error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      console.error('Token verification error:', error); // 服务器日志，保持英文或按需修改
+      res.status(401).json({ message: '未授权，Token 验证失败' }); // Changed
     }
   }
 
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+  if (!token && !res.headersSent) { // 添加 !res.headersSent 避免在已发送响应后再发送
+    res.status(401).json({ message: '未授权，缺少 Token' }); // Changed
   }
 };
 

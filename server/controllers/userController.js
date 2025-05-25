@@ -14,12 +14,12 @@ exports.getMe = async (req, res) => {
     // req.user 由 authMiddleware 设置
     const user = await User.findById(req.user._id).select('-password'); // 不返回密码
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: '用户未找到' }); // Changed
     }
     res.json(user);
   } catch (error) {
     console.error('Get Me Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: '服务器错误，获取用户信息失败' }); // Changed
   }
 };
 
@@ -30,7 +30,7 @@ exports.getUserProfileById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select('-password'); // 不返回密码
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: '用户未找到' }); // Changed
     }
     // 未来可以考虑同时返回该用户的一些帖子等信息
     // const userPosts = await Post.find({ user: user._id }).sort({ createdAt: -1 }).limit(5);
@@ -45,9 +45,9 @@ exports.getUserProfileById = async (req, res) => {
   } catch (error) {
     console.error('Get User Profile Error:', error);
     if (error.kind === 'ObjectId') {
-      return res.status(404).json({ message: 'User not found (invalid ID format)' });
+      return res.status(404).json({ message: '用户未找到 (ID 格式无效)' }); // Changed
     }
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: '服务器错误，获取用户资料失败' }); // Changed
   }
 };
 
@@ -58,7 +58,7 @@ exports.getUserProfileByUsername = async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username }).select('-password');
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: '用户未找到' }); // Changed
     }
     res.json({
       _id: user._id,
@@ -69,7 +69,7 @@ exports.getUserProfileByUsername = async (req, res) => {
     });
   } catch (error) {
     console.error('Get User Profile by Username Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: '服务器错误，获取用户资料失败' }); // Changed
   }
 };
 
@@ -93,35 +93,24 @@ exports.updateUserProfile = async (req, res) => {
       if (req.file) {
         // 如果有旧头像且不是默认头像，则删除旧头像
         if (user.avatar && user.avatar !== 'default_avatar.png' && !user.avatar.startsWith('http')) {
-            const oldAvatarPath = path.join(__dirname, '..', 'public', user.avatar); // 假设 avatar 存储的是相对路径如 /uploads/avatars/filename.jpg
+            const oldAvatarPath = path.resolve(__dirname, '..', '..', 'public', user.avatar.startsWith('/') ? user.avatar.substring(1) : user.avatar);
              try {
                 if (fs.existsSync(oldAvatarPath)) {
                     fs.unlinkSync(oldAvatarPath);
                 }
              } catch (err) {
-                console.error("Error deleting old avatar:", err);
+                console.error("删除旧头像时出错:", err); // Changed
                 // 不阻断流程，但记录错误
              }
         }
         // 将头像路径保存到数据库，相对于 public 目录
         user.avatar = `/uploads/avatars/${req.file.filename}`;
-      } else if (req.body.avatar === '' && user.avatar !== 'default_avatar.png') {
-        // 如果前端发送了空字符串表示移除头像，并且当前头像不是默认头像
-        // (可选：如果希望支持通过清空avatar字段来恢复默认头像或移除)
-        // 这里我们假设如果 req.body.avatar 为空，且之前有自定义头像，则不做更改。
-        // 或者，如果业务逻辑是清空 avatar 字段就恢复默认，可以如下设置：
-        // if (user.avatar && user.avatar !== 'default_avatar.png' && !user.avatar.startsWith('http')) {
-        //   const oldAvatarPath = path.join(__dirname, '..', 'public', user.avatar);
-        //   try { if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath); } catch (e) { console.error(e); }
-        // }
-        // user.avatar = 'default_avatar.png'; // 恢复为默认头像
       }
-
 
       // 如果提供了新密码
       if (req.body.password) {
         if (req.body.password.length < 6) {
-          return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+          return res.status(400).json({ message: '密码长度至少为6位' }); // Changed
         }
         user.password = req.body.password; // pre-save hook 会处理哈希
       }
@@ -137,31 +126,20 @@ exports.updateUserProfile = async (req, res) => {
         token: jwt.sign({ id: updatedUser._id }, config.JWT_SECRET, { expiresIn: '30d' }),
       });
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: '用户未找到' }); // Changed
     }
   } catch (error) {
     console.error('Update User Profile Error:', error);
     // Multer 错误处理 (例如文件过大或类型不匹配)
     if (error.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ message: 'File is too large. Max 5MB allowed.' });
+        return res.status(400).json({ message: '文件过大，最大允许5MB' }); // Changed
     }
-    if (error.message === 'Not an image! Please upload only images.') {
-        return res.status(400).json({ message: error.message });
+    if (error.message === 'Not an image! Please upload only images.') { // 这个错误信息来源于你的 multer 配置，如果想改，需要在 multer 配置中改
+        return res.status(400).json({ message: '不是图片！请仅上传图片文件' }); // Changed
     }
     if (error.code === 11000) { // MongoDB duplicate key error
-      return res.status(400).json({ message: 'Email or username already exists' });
+      return res.status(400).json({ message: '邮箱或用户名已存在' }); // Changed
     }
-    res.status(500).json({ message: 'Server error while updating profile', error: error.message });
+    res.status(500).json({ message: '服务器错误，更新用户资料失败', error: error.message }); // Changed
   }
 };
-
-// (未来可以添加的功能)
-// @desc    更改用户头像 (处理文件上传)
-// @route   PUT /api/users/me/avatar
-// @access  Private
-// exports.updateUserAvatar = async (req, res) => { ... };
-
-// @desc    更改用户密码
-// @route   PUT /api/users/me/password
-// @access  Private
-// exports.updateUserPassword = async (req, res) => { ... };

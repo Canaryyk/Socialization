@@ -60,7 +60,8 @@ const userAvatar = computed(() => {
     // 否则，假定是服务器相对路径，需要拼接基础 URL
     // 与 EditProfilePage 和 UserProfilePage 保持一致
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
-    return `${baseUrl}/public${user.avatar}`; // 例如 http://localhost:5001/public/uploads/avatars/xxxx.jpg
+    // return `${baseUrl}/public${user.avatar}`; // 旧路径，例如 http://localhost:5001/public/uploads/avatars/xxxx.jpg
+    return `${baseUrl}${user.avatar}`; // 新路径，例如 http://localhost:5001/uploads/avatars/xxxx.jpg
   }
   return defaultFrontendAvatarPath; // 回退到前端的默认头像
 });

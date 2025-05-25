@@ -1,6 +1,29 @@
 // server/models/Post.js
 const mongoose = require('mongoose');
 
+const CommentSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  text: {
+    type: String,
+    required: [true, '评论内容不能为空'],
+  },
+  name: { // 评论者用户名，冗余存储以方便前端显示
+    type: String,
+    required: true,
+  },
+  avatar: { // 评论者头像，冗余存储
+    type: String,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const PostSchema = new mongoose.Schema({
   user: { // 发帖用户
     type: mongoose.Schema.Types.ObjectId,
@@ -23,8 +46,8 @@ const PostSchema = new mongoose.Schema({
     },
   ],
   // 未来可以添加评论和点赞
-  // comments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
-  // likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  comments: [CommentSchema], // 使用上面定义的 CommentSchema
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // 取消注释并定义 likes
   createdAt: {
     type: Date,
     default: Date.now,

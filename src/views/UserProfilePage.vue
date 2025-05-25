@@ -122,7 +122,7 @@ const effectiveAvatarSrc = computed(() => {
         return profile.value.avatar;
     }
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
-    return `${baseUrl}/public${profile.value.avatar}`;
+    return `${baseUrl}${profile.value.avatar}`;
   }
   return defaultAvatar.value;
 });

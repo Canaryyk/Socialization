@@ -1,7 +1,7 @@
 <template>
   <div class="post-card" @click="goToDetail">
     <div class="post-header">
-      <img :src="post.user && post.user.avatar ? post.user.avatar : '/images/default-avatar.jpg'"
+      <img :src="userAvatarSrc"
            alt="avatar"
            class="avatar"
            @error="handleAvatarError" />
@@ -15,66 +15,89 @@
       </div>
     </div>
     <h3>{{ post.title }}</h3>
-    <div v-if="post.images && post.images.length > 0" class="post-image-container">
-      <img :src="post.images[0]" alt="post image" class="post-image" />
+    <p class="post-content-preview">{{ truncatedContent }}</p>
+    <div v-if="post.images && post.images.length > 0 && postImageSrc" class="post-image-container">
+      <img :src="postImageSrc" alt="post image" class="post-image" />
+    </div>
+    <div class="post-stats">
+      <span class="stat-item">
+        ❤️ {{ post.likes ? post.likes.length : 0 }}
+      </span>
+      <span class="stat-item">
+        💬 {{ post.comments ? post.comments.length : 0 }}
+      </span>
     </div>
   </div>
 </template>
 
-<script>
-  import { useRouter } from 'vue-router'; // 确保已安装和正确导入
+<script setup>
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
-  export default {
-    name: 'PostCard',
-    props: {
-      post: {
-        type: Object,
-        required: true
-      }
-    },
-    computed: {
-      formattedTimestamp() {
-        // 4. 使用 post.createdAt
-        if (!this.post || !this.post.createdAt) return '未知时间';
-        const date = new Date(this.post.createdAt);
-        return date.toLocaleString(); // 你可以根据需要格式化，例如 date.toLocaleDateString()
-      },
-      // 可选：如果想截断内容预览
-      /*
-      truncatedContent() {
-        if (!this.post || !this.post.content) return '';
-        const maxLength = 100; // 设置预览字数
-        return this.post.content.length > maxLength
-          ? this.post.content.substring(0, maxLength) + '...'
-          : this.post.content;
-      }
-      */
-    },
-    setup(props) {
-      const router = useRouter();
-      const goToDetail = () => {
-        // 6. 确保路由参数与后端 ID 匹配：props.post._id (字符串)
-        //    并且你的 PostDetail 路由期望的参数是 props.post._id
-        if (props.post && props.post._id) {
-          router.push({
-            name: 'PostDetail', // 确保你的路由名称是 'PostDetail'
-            params: { id: props.post._id } // 将 props.post.id 改为 props.post._id
-          });
-        } else {
-          console.error('Post ID is missing, cannot navigate to detail.', props.post);
-        }
-      };
+const router = useRouter();
 
-      const handleAvatarError = (event) => { // 可选：处理头像加载失败
-        event.target.src = '/images/default_avatar.jpg'; // 替换为你的默认头像路径
-      };
+const props = defineProps({
+  post: {
+    type: Object,
+    required: true
+  }
+});
 
-      return {
-        goToDetail,
-        handleAvatarError
-      };
+const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'; // 定义 baseUrl
+
+const userAvatarSrc = computed(() => {
+  if (props.post.user && props.post.user.avatar && props.post.user.avatar !== 'default_avatar.png') {
+    if (props.post.user.avatar.startsWith('http')) {
+      return props.post.user.avatar;
     }
-  };
+    // return `http://localhost:3000/${props.post.user.avatar}`; // 旧的硬编码URL
+    return `${baseUrl}${props.post.user.avatar}`; // 使用 baseUrl
+  }
+  return '/images/default_avatar.jpg'; // 前端默认头像
+});
+
+const postImageSrc = computed(() => {
+  if (props.post.images && props.post.images.length > 0) {
+    if (props.post.images[0].startsWith('http')) {
+      return props.post.images[0];
+    }
+    // return `http://localhost:3000/${props.post.images[0]}`; // 旧的硬编码URL
+    return `${baseUrl}${props.post.images[0]}`; // 使用 baseUrl
+  }
+  return null; // 或者一个占位图
+});
+
+const formattedTimestamp = computed(() => {
+  // 4. 使用 post.createdAt
+  if (!props.post || !props.post.createdAt) return '未知时间';
+  const date = new Date(props.post.createdAt);
+  return date.toLocaleString(); // 你可以根据需要格式化，例如 date.toLocaleDateString()
+});
+
+const truncatedContent = computed(() => {
+  if (!props.post || !props.post.content) return '';
+  const maxLength = 100;
+  return props.post.content.length > maxLength
+    ? props.post.content.substring(0, maxLength) + '...'
+    : props.post.content;
+});
+
+const goToDetail = () => {
+  // 6. 确保路由参数与后端 ID 匹配：props.post._id (字符串)
+  //    并且你的 PostDetail 路由期望的参数是 props.post._id
+  if (props.post && props.post._id) {
+    router.push({
+      name: 'PostDetail', // 确保你的路由名称是 'PostDetail'
+      params: { id: props.post._id } // 将 props.post.id 改为 props.post._id
+    });
+  } else {
+    console.error('Post ID is missing, cannot navigate to detail.', props.post);
+  }
+};
+
+const handleAvatarError = (event) => { // 可选：处理头像加载失败
+  event.target.src = '/images/default_avatar.jpg'; // 替换为你的默认头像路径
+};
 </script>
 
 <style scoped>
@@ -149,5 +172,31 @@
     height: 100%;
     object-fit: cover; /* 裁剪填充容器 */
     border-radius: 8px;
+  }
+
+  .post-content-preview {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    max-height: 4.5em; /* approx 3 lines */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .post-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color-light, #eee);
+    font-size: 0.9rem;
+    color: var(--text-secondary-color, #555);
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
   }
 </style>
