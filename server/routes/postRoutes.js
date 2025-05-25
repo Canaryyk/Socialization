@@ -11,6 +11,8 @@ const {
   getPostsByUser,
   addCommentToPost,
   deleteCommentFromPost,
+  likePost,
+  likeComment,
   // updatePost, (未来可以添加)
   // deletePost, (未来可以添加)
 } = require('../controllers/postController');
@@ -74,5 +76,9 @@ router.route('/:id/comments') // Changed from /comment to /comments
 
 router.route('/:postId/comments/:commentId')
   .delete(protect, deleteCommentFromPost);
+
+// Like routes
+router.route('/:id/like').post(protect, likePost); // 点赞/取消点赞帖子
+router.route('/:postId/comments/:commentId/like').post(protect, likeComment); // 点赞/取消点赞评论
 
 module.exports = router;

@@ -18,6 +18,7 @@ const CommentSchema = new mongoose.Schema({
   avatar: { // 评论者头像，冗余存储
     type: String,
   },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // 添加评论点赞字段
   createdAt: {
     type: Date,
     default: Date.now,

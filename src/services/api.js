@@ -72,11 +72,11 @@ export default {
   createPost(postData) {
     return apiClient.post('/posts', postData);
   },
-  getAllPosts() {
-    return apiClient.get('/posts');
+  getAllPosts(sortBy = 'createdAt') { // 默认按帖子创建时间排序，评论默认按时间
+    return apiClient.get('/posts', { params: { sortBy } });
   },
-  getPostById(postId) {
-    return apiClient.get(`/posts/${postId}`);
+  getPostById(postId, sortByComment = 'time') { // 默认按评论时间排序
+    return apiClient.get(`/posts/${postId}`, { params: { sortByComment } });
   },
   getPostsByUser(userId) {
     return apiClient.get(`/posts/user/${userId}`);
@@ -88,6 +88,15 @@ export default {
   },
   deleteCommentFromPost(postId, commentId) {
     return apiClient.delete(`/posts/${postId}/comments/${commentId}`);
+  },
+
+  // --- Like Service ---
+  likePost(postId) {
+    return apiClient.post(`/posts/${postId}/like`);
+  },
+
+  likeComment(postId, commentId) {
+    return apiClient.post(`/posts/${postId}/comments/${commentId}/like`);
   },
 
   // ... 其他 API 方法

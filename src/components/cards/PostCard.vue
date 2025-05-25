@@ -21,10 +21,10 @@
     </div>
     <div class="post-stats">
       <span class="stat-item">
-        ❤️ {{ post.likes ? post.likes.length : 0 }}
+        ❤️ {{ post && post.likes ? post.likes.length : 0 }}
       </span>
       <span class="stat-item">
-        💬 {{ post.comments ? post.comments.length : 0 }}
+        💬 {{ post && post.comments ? post.comments.length : 0 }}
       </span>
     </div>
   </div>

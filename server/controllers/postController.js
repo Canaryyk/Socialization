@@ -40,11 +40,24 @@ exports.createPost = async (req, res) => {
 // @access  Public
 exports.getAllPosts = async (req, res) => {
   try {
+    const { sortBy } = req.query; // 获取排序参数
+
+    let commentSortOptions = {};
+    if (sortBy === 'likes') {
+      // Mongoose 不直接支持按子文档数组中字段的长度排序，
+      // 这通常需要在聚合框架中完成，或者在应用程序级别处理。
+      // 简单起见，我们先按评论创建时间排序，点赞数排序前端处理或后续优化
+      commentSortOptions = { createdAt: -1 }; // 默认按评论创建时间
+    } else { // 默认为按评论创建时间
+      commentSortOptions = { createdAt: -1 };
+    }
+
     const posts = await Post.find({})
       .populate('user', 'username avatar')
       .populate({
           path: 'comments',
-          populate: { path: 'user', select: 'username avatar' }
+          populate: { path: 'user', select: 'username avatar' },
+          options: { sort: commentSortOptions } // 应用评论排序
       })
       .sort({ createdAt: -1 });
     res.json(posts);
@@ -59,14 +72,23 @@ exports.getAllPosts = async (req, res) => {
 // @access  Public
 exports.getPostById = async (req, res) => {
   try {
+    const { sortByComment } = req.query; // 获取评论排序参数，例如 'likes' 或 'time'
+
     const post = await Post.findById(req.params.id)
       .populate('user', 'username avatar') // Populate post author
       .populate({ // Populate comments and their authors
         path: 'comments',
         populate: { path: 'user', select: 'username avatar' }
+        // 排序逻辑将在此处处理
       });
 
     if (post) {
+      // 手动排序评论
+      if (sortByComment === 'likes') {
+        post.comments.sort((a, b) => (b.likes ? b.likes.length : 0) - (a.likes ? a.likes.length : 0));
+      } else { // 默认或 sortByComment === 'time'
+        post.comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
       res.json(post);
     } else {
       res.status(404).json({ message: '帖子未找到' }); // Changed
@@ -180,6 +202,76 @@ exports.deleteCommentFromPost = async (req, res) => {
   } catch (error) {
     console.error('Delete Comment Error:', error);
     res.status(500).json({ message: '服务器错误，删除评论失败' });
+  }
+};
+
+// @desc    点赞/取消点赞帖子
+// @route   POST /api/posts/:id/like
+// @access  Private
+exports.likePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: '帖子未找到' });
+    }
+
+    const userId = req.user._id;
+    const likedIndex = post.likes.findIndex(like => like.equals(userId));
+
+    if (likedIndex > -1) {
+      // 如果已点赞，则取消点赞
+      post.likes.splice(likedIndex, 1);
+      await post.save();
+      res.json({ message: '已取消点赞', likes: post.likes });
+    } else {
+      // 如果未点赞，则添加点赞
+      post.likes.push(userId);
+      await post.save();
+      res.json({ message: '点赞成功', likes: post.likes });
+    }
+  } catch (error) {
+    console.error('Like Post Error:', error);
+    res.status(500).json({ message: '服务器错误，操作失败' });
+  }
+};
+
+// @desc    点赞/取消点赞评论
+// @route   POST /api/posts/:postId/comments/:commentId/like
+// @access  Private
+exports.likeComment = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ message: '帖子未找到' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ message: '评论未找到' });
+    }
+
+    const userId = req.user._id;
+    // 确保 comment.likes 数组存在
+    if (!comment.likes) {
+        comment.likes = [];
+    }
+    const likedIndex = comment.likes.findIndex(like => like.equals(userId));
+
+    if (likedIndex > -1) {
+      // 如果已点赞，则取消点赞
+      comment.likes.splice(likedIndex, 1);
+    } else {
+      // 如果未点赞，则添加点赞
+      comment.likes.push(userId);
+    }
+
+    await post.save();
+    // 返回更新后的评论的点赞列表和数量
+    res.json({ message: '操作成功', likes: comment.likes, commentId: comment._id });
+
+  } catch (error) {
+    console.error('Like Comment Error:', error);
+    res.status(500).json({ message: '服务器错误，操作评论点赞失败' });
   }
 };
 
