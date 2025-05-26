@@ -1,23 +1,27 @@
 <template>
   <div class="post-card" @click="goToDetail">
     <div class="post-header">
-      <img :src="userAvatarSrc"
-           alt="avatar"
-           class="avatar"
-           @error="handleAvatarError" />
-      <div class="author-info" v-if="post.user">
-        <h4>{{ post.user.username }}</h4>
-        <span class="timestamp">{{ formattedTimestamp }}</span>
-      </div>
-      <div class="author-info" v-else>
-        <h4>匿名用户</h4>
-        <span class="timestamp">{{ formattedTimestamp }}</span>
+      <div @click.stop="goToUserProfile(post.user)" class="user-info-clickable">
+        <img :src="userAvatarSrc"
+             alt="avatar"
+             class="avatar"
+             @error="handleAvatarError" />
+        <div class="author-info" v-if="post.user">
+          <h4>{{ post.user.username }}</h4>
+          <span class="timestamp">{{ formattedTimestamp }}</span>
+        </div>
+        <div class="author-info" v-else>
+          <h4>匿名用户</h4>
+          <span class="timestamp">{{ formattedTimestamp }}</span>
+        </div>
       </div>
     </div>
-    <h3>{{ post.title }}</h3>
-    <p class="post-content-preview">{{ truncatedContent }}</p>
-    <div v-if="post.images && post.images.length > 0 && postImageSrc" class="post-image-container">
-      <img :src="postImageSrc" alt="post image" class="post-image" />
+    <div @click="goToDetail">
+      <h3>{{ post.title }}</h3>
+      <p class="post-content-preview">{{ truncatedContent }}</p>
+      <div v-if="post.images && post.images.length > 0 && postImageSrc" class="post-image-container">
+        <img :src="postImageSrc" alt="post image" class="post-image" />
+      </div>
     </div>
     <div class="post-stats">
       <span class="stat-item">
@@ -92,6 +96,17 @@ const goToDetail = () => {
     });
   } else {
     console.error('Post ID is missing, cannot navigate to detail.', props.post);
+  }
+};
+
+const goToUserProfile = (user) => {
+  if (user && user._id) {
+    // 优先使用用户ID跳转，如果路由配置了 /profile/:id
+    // 如果你的路由是 /user/:username，则使用 user.username
+    router.push({ name: 'UserProfileById', params: { id: user._id } });
+    // 或者 router.push({ name: 'UserProfileByUsername', params: { username: user.username } });
+  } else if (user && user.username) {
+     router.push({ name: 'UserProfileByUsername', params: { username: user.username } });
   }
 };
 
@@ -198,5 +213,11 @@ const handleAvatarError = (event) => { // 可选：处理头像加载失败
     display: flex;
     align-items: center;
     gap: 0.3rem;
+  }
+
+  .user-info-clickable {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
   }
 </style>

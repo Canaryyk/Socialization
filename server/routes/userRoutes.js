@@ -4,7 +4,19 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getMe, getUserProfileById, updateUserProfile, getUserProfileByUsername } = require('../controllers/userController');
+const {
+  getMe,
+  getUserProfileById,
+  updateUserProfile,
+  getUserProfileByUsername,
+  followUser,
+  unfollowUser,
+  getUserReplies,
+  getUserMedia,
+  getUserLikedPosts,
+  getUserFollowingList,
+  getUserFollowersList
+} = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 
 // 创建上传目录（如果不存在）
@@ -54,6 +66,21 @@ router.get('/me', protect, getMe); // 获取当前登录用户信息，需要认
 
 // 应用 multer 中间件到更新用户信息的路由，'avatar' 是前端 FormData 中的字段名
 router.put('/me/update', protect, upload.single('avatar'), updateUserProfile); // 更新当前用户信息
+
+// 新增：关注和取消关注用户的路由
+router.post('/:id/follow', protect, followUser);
+router.post('/:id/unfollow', protect, unfollowUser);
+
+// 新增：获取用户内容的路由
+router.get('/:id/replies', getUserReplies);       // 获取用户的所有回复
+router.get('/:id/media', getUserMedia);           // 获取用户的所有媒体
+router.get('/:id/likes', getUserLikedPosts);       // 获取用户喜欢的所有帖子
+
+// New routes for following/followers lists
+router.get('/id/:id/following_list', (req, res, next) => { req.params.type = 'id'; req.params.identifier = req.params.id; next(); }, getUserFollowingList);
+router.get('/username/:username/following_list', (req, res, next) => { req.params.type = 'username'; req.params.identifier = req.params.username; next(); }, getUserFollowingList);
+router.get('/id/:id/followers_list', (req, res, next) => { req.params.type = 'id'; req.params.identifier = req.params.id; next(); }, getUserFollowersList);
+router.get('/username/:username/followers_list', (req, res, next) => { req.params.type = 'username'; req.params.identifier = req.params.username; next(); }, getUserFollowersList);
 
 router.get('/username/:username', getUserProfileByUsername); // 根据用户名获取用户信息，公开
 router.get('/:id', getUserProfileById); // 根据ID获取用户信息，公开

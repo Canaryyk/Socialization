@@ -14,6 +14,10 @@ const RegisterView = () => import('@/views/RegisterView.vue');
 const UserProfilePage = () => import('@/views/UserProfilePage.vue');
 const EditProfilePage = () => import('@/views/EditProfilePage.vue');
 
+// 占位符组件 - 你需要创建这些文件
+const UserFollowingListPage = () => import('@/views/UserFollowingListPage.vue'); // 示例路径
+const UserFollowersListPage = () => import('@/views/UserFollowersListPage.vue'); // 示例路径
+
 const routes = [
   {
     path: '/',
@@ -66,6 +70,30 @@ const routes = [
     path: '/profile/:id',
     name: 'UserProfileById',
     component: UserProfilePage,
+    props: true
+  },
+  {
+    path: '/user/:username/following',
+    name: 'UserFollowingByUsername',
+    component: UserFollowingListPage,
+    props: true
+  },
+  {
+    path: '/user/:username/followers',
+    name: 'UserFollowersByUsername',
+    component: UserFollowersListPage,
+    props: true
+  },
+  {
+    path: '/profile/:id/following',
+    name: 'UserFollowingById',
+    component: UserFollowingListPage, // 注意：这里复用同一个列表组件
+    props: true
+  },
+  {
+    path: '/profile/:id/followers',
+    name: 'UserFollowersById',
+    component: UserFollowersListPage, // 注意：这里复用同一个列表组件
     props: true
   },
   {

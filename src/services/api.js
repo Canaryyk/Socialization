@@ -5,9 +5,6 @@ const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api'
 
 const apiClient = axios.create({
   baseURL: API_URL,
-  // headers: { // 移除全局 Content-Type 设置，让 Axios 自动处理
-  //   'Content-Type': 'application/json',
-  // },
 });
 
 // 请求拦截器：在每个请求发送前，检查 localStorage 中是否有 token，如果有就添加到请求头
@@ -68,6 +65,14 @@ export default {
     return apiClient.get(`/users/username/${username}`);
   },
 
+  // 新增：关注和取消关注用户
+  followUser(userId) {
+    return apiClient.post(`/users/${userId}/follow`);
+  },
+  unfollowUser(userId) {
+    return apiClient.post(`/users/${userId}/unfollow`);
+  },
+
   // --- Post Service (你已经有的) ---
   createPost(postData) {
     return apiClient.post('/posts', postData);
@@ -80,6 +85,34 @@ export default {
   },
   getPostsByUser(userId) {
     return apiClient.get(`/posts/user/${userId}`);
+  },
+
+  // 更新：获取用户回复列表
+  getUserReplies(userId) {
+    return apiClient.get(`/users/${userId}/replies`);
+  },
+
+  // 更新：获取用户媒体列表
+  getUserMedia(userId) {
+    return apiClient.get(`/users/${userId}/media`);
+  },
+
+  // 更新：获取用户喜欢的帖子列表
+  getUserLikedPosts(userId) {
+    // console.warn(`API method 'getUserLikedPosts' for userId: ${userId} is a placeholder and needs a real backend endpoint.`);
+    return apiClient.get(`/users/${userId}/likes`);
+  },
+
+  // 新增：获取用户关注的完整列表
+  getUserFollowingList(identifier, type = 'id') { // type can be 'id' or 'username'
+    const endpoint = type === 'username' ? `/users/username/${identifier}/following_list` : `/users/${identifier}/following_list`;
+    return apiClient.get(endpoint);
+  },
+
+  // 新增：获取用户粉丝的完整列表
+  getUserFollowersList(identifier, type = 'id') { // type can be 'id' or 'username'
+    const endpoint = type === 'username' ? `/users/username/${identifier}/followers_list` : `/users/${identifier}/followers_list`;
+    return apiClient.get(endpoint);
   },
 
   // --- Comment Service for Posts ---

@@ -31,6 +31,14 @@ const UserSchema = new mongoose.Schema({
     default: '',
     maxlength: 200,
   },
+  following: [{ // 我关注的用户列表
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  followers: [{ // 关注我的用户列表 (粉丝)
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
   createdAt: {
     type: Date,
     default: Date.now,
